@@ -17,25 +17,51 @@ end
 theta_0 = 0.0
 theta_1 = 1.0
 z(x) = theta_0 .+ theta_1*x
-h(x) = 1./(1.+exp.(-z(x)))
+h(x) = 1 ./(1 .+exp.(-z(x)))
 
 m = length(X)
-y_hat = h(X)
 
-function cost()
+
+function cost(x,y)
     (-1/m)*sum(
-        Y.*log.(y_hat) + (1.-Y).*log.(1.-y_hat)
+        x.*log.(y) + (1 .-x).*log.(1 .-y)
     )
 end
 
-J = cost()
 
-function pd_theta_0()
-    sum(y_hat-Y)
+
+function pd_theta_0(y_hat,y)
+    sum(y_hat-y)
 end
 
-function pd_theta_1()
-    sum((y_hat-Y)*.X)
+function pd_theta_1(y_hat,y)
+    sum((y_hat-y).*X)
 end
 
 alpha = 0.01
+
+loss = []
+for i in 1:5000
+    y_hat = h(X)
+    push!(loss,cost(Y,y_hat))
+    global theta_0 -= alpha*pd_theta_0(y_hat,Y)
+    global theta_1 -= alpha*pd_theta_1(y_hat,Y)
+end
+
+p_scatter = scatter(X,Y,
+  xlabel = "Size of grains of sand (mm)",
+  ylabel = "Probability of observation",
+  title = "Wolf spider presence classifier",
+  legend = false,
+  color = :red,
+  markersize = 5
+)
+
+plot!(X,h(X),color= :blue,legend=false)
+
+plot_loss = plot(1:5000,loss,
+   title = "Loss",
+   xlabel = "Number of iterations",
+   ylabel = "Loss"
+)
+plot(p_scatter,plot_loss,layout=(2,1))
